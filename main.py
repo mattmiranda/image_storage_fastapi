@@ -4,13 +4,17 @@ import aiofiles
 from typing import Optional, Annotated
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import db_utils as db
 
+IMG_BASE_PATH = './image/'
+
 app = FastAPI()
 
-# I understand that pydantic is very useful to create the data models. 
-# I will try using it for data validation later.
+# I understand that pydantic is very useful to create the data models, however
+# I decided to use only basic python objects and data types as the purpose of 
+# this assignment is not to test my ability to use pydantic.
 # class Image(BaseModel):
 #     _id: str
 #     createdDate: int
@@ -30,9 +34,9 @@ def query_image_by_id(image_id: str):
     if image_id not in images:
         raise HTTPException(status_code=404, detail=f"Image with ID {image_id} does not exist")
     else:
-        return images[image_id]
+        return FileResponse(IMG_BASE_PATH + images[image_id]['filename'])
 
-# Problem with the typing Union operator in python 3.9
+# TODO: Update python to 3.10+ in order to use simplified Optional/Union syntax, ie: str | None = None
 @app.get("/image")
 def query_image_by_parameter(
         filename: Optional[str] = None,
@@ -66,7 +70,7 @@ async def add_image(
             HTTPException(status_code=400, detail=f"Image with same name already exists")
 
     # Save image to 'image' directory using buffer
-    out_file_path = './image/' + file.filename
+    out_file_path = IMG_BASE_PATH + file.filename
     async with aiofiles.open(out_file_path, 'wb') as out_file:
         while content := await file.read(1024):  # async read chunk
             await out_file.write(content)  # async write chunk
@@ -94,6 +98,6 @@ def delete_image(image_id: str):
     image = db.remove_image(image_id)
 
     # Delete image file from 'image' directory
-    os.remove('./image/'+image['filename'])
+    os.remove(IMG_BASE_PATH + image['filename'])
 
     return {"status": "success", "delete_image": image}
