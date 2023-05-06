@@ -22,19 +22,9 @@ app = FastAPI()
 #     contentType: str
 
 @app.get("/")
-def index():
+def query_all_images():
     images = db.read()
     return {"images": images}
-
-
-@app.get("/image/{image_id}")
-def query_image_by_id(image_id: str):
-    images_list = db.read()
-    images = db.list_to_dict(images_list)
-    if image_id not in images:
-        raise HTTPException(status_code=404, detail=f"Image with ID {image_id} does not exist")
-    else:
-        return FileResponse(IMG_BASE_PATH + images[image_id]['filename'])
 
 # TODO: Update python to 3.10+ in order to use simplified Optional/Union syntax, ie: str | None = None
 @app.get("/image")
@@ -57,6 +47,15 @@ def query_image_by_parameter(
         "query": {"filename": filename, "contentType": contentType, "createdDate": createdDate},
         "selection": selection
     }
+
+@app.get("/image/{image_id}")
+def get_image_by_id(image_id: str):
+    images_list = db.read()
+    images = db.list_to_dict(images_list)
+    if image_id not in images:
+        raise HTTPException(status_code=404, detail=f"Image with ID {image_id} does not exist")
+    else:
+        return FileResponse(IMG_BASE_PATH + images[image_id]['filename'])
 
 @app.post("/")
 async def add_image(
