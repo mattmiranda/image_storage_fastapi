@@ -56,10 +56,12 @@ def get_image_by_id(image_id: str) -> FileResponse:
 # Endpoint to add an image to storage and DB. Returns the downsized image file.
 @app.post("/")
 async def add_image(file: Annotated[UploadFile, File()]) -> FileResponse:
+    if not file.filename or file.size < 1:
+        raise HTTPException(status_code=404, detail=f"Invalid or missing file")
     images_list = db.read()
     for img in images_list:
         if file.filename == img["filename"]:
-            HTTPException(status_code=400, detail=f"Image with same name already exists")
+            raise HTTPException(status_code=400, detail=f"Image with same name already exists")
 
     # Save image to 'image' directory using buffer
     out_file_path = IMG_BASE_PATH + file.filename
