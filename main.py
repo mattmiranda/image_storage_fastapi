@@ -1,6 +1,7 @@
 import os
 import uuid
 import aiofiles
+from PIL import Image
 from typing import Optional, Annotated
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, File, UploadFile
@@ -54,15 +55,13 @@ def get_image_by_id(image_id: str):
     images = db.list_to_dict(images_list)
     if image_id not in images:
         raise HTTPException(status_code=404, detail=f"Image with ID {image_id} does not exist")
-    else:
-        return FileResponse(IMG_BASE_PATH + images[image_id]['filename'])
+
+    return FileResponse(IMG_BASE_PATH + images[image_id]['filename'])
 
 @app.post("/")
 async def add_image(
     file: Annotated[UploadFile, File()]
 ): #(image: Image)
-    print("filename: ", file.filename)
-    print("fileb_content_type: ", file.content_type)
     images_list = db.read()
     for img in images_list:
         if file.filename == img["filename"]:
@@ -71,8 +70,14 @@ async def add_image(
     # Save image to 'image' directory using buffer
     out_file_path = IMG_BASE_PATH + file.filename
     async with aiofiles.open(out_file_path, 'wb') as out_file:
-        while content := await file.read(1024):  # async read chunk
+        while content := await file.read(5*1024):  # async read chunk
             await out_file.write(content)  # async write chunk
+
+    # If image is larger than 1MB, downsize it and overwrite original image
+    img = Image.open(out_file_path)
+    if file.size > 1000000:
+        img.thumbnail((1000,1000))
+    img.save(IMG_BASE_PATH + file.filename)
 
     # Store image entry to DB
     new_image = {
@@ -82,7 +87,7 @@ async def add_image(
         "createdDate": int(datetime.now().timestamp())
     }
     result = db.add_image(new_image)
-    return {"status": "success", "added_image": new_image}
+    return FileResponse(IMG_BASE_PATH + file.filename)
     
 # # @app.put("/images/{image_id}")
     
