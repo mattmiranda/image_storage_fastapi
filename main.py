@@ -2,39 +2,36 @@ import os
 import uuid
 import aiofiles
 from PIL import Image
-from typing import Optional, Annotated
+from typing import Union, Optional, Annotated
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
 import db_utils as db
 
 IMG_BASE_PATH = './image/'
 
 app = FastAPI()
 
-# I understand that pydantic is very useful to create the data models, however
-# I decided to use only basic python objects and data types as the purpose of 
-# this assignment is not to test my ability to use pydantic.
-# class Image(BaseModel):
-#     _id: str
-#     createdDate: int
-#     filename: str
-#     contentType: str
+# I understand that pydantic is very useful to create and manage the data models, 
+# however I decided to use only basic python objects and data types as the purpose 
+# of this assignment is not to test my ability using pydantic.
 
+# Index route returns a list of all image objects
 @app.get("/")
-def query_all_images():
+def query_all_images() -> dict[str, list]:
     images = db.read()
     return {"images": images}
 
+# Query images by parameters included in the url. These are optional parameters.
+# Example: /image?filename=cat1.jpeg
 # TODO: Update python to 3.10+ in order to use simplified Optional/Union syntax, ie: str | None = None
 @app.get("/image")
 def query_image_by_parameter(
         filename: Optional[str] = None,
         contentType: Optional[str] = None,
         createdDate: Optional[int] = None
-):
-    def check_image(image: dict): #(image: Image)
+) -> dict[str, list]:
+    def check_image(image: dict):
         return all(
             (
                 filename is None or image['filename'] == filename,
@@ -44,13 +41,11 @@ def query_image_by_parameter(
         )
     images_list = db.read()
     selection = [image for image in images_list if check_image(image)]
-    return {
-        "query": {"filename": filename, "contentType": contentType, "createdDate": createdDate},
-        "selection": selection
-    }
+    return {"query_result": selection}
 
+# API to get image by image_id. Returns image file.
 @app.get("/image/{image_id}")
-def get_image_by_id(image_id: str):
+def get_image_by_id(image_id: str) -> FileResponse:
     images_list = db.read()
     images = db.list_to_dict(images_list)
     if image_id not in images:
@@ -58,10 +53,9 @@ def get_image_by_id(image_id: str):
 
     return FileResponse(IMG_BASE_PATH + images[image_id]['filename'])
 
+# Endpoint to add an image to storage and DB. Returns the downsized image file.
 @app.post("/")
-async def add_image(
-    file: Annotated[UploadFile, File()]
-): #(image: Image)
+async def add_image(file: Annotated[UploadFile, File()]) -> FileResponse:
     images_list = db.read()
     for img in images_list:
         if file.filename == img["filename"]:
@@ -73,7 +67,7 @@ async def add_image(
         while content := await file.read(5*1024):  # async read chunk
             await out_file.write(content)  # async write chunk
 
-    # If image is larger than 1MB, downsize it and overwrite original image
+    # If image is larger than 1MB, downsize it and overwrite the original image
     img = Image.open(out_file_path)
     if file.size > 1000000:
         img.thumbnail((1000,1000))
@@ -88,9 +82,11 @@ async def add_image(
     }
     result = db.add_image(new_image)
     return FileResponse(IMG_BASE_PATH + file.filename)
-    
-# # @app.put("/images/{image_id}")
-    
+
+# TODO: Implement patching function for completeness
+# @app.put("/images/{image_id}")
+
+# Delete image data from DB and image file. 
 @app.delete("/image/{image_id}")
 def delete_image(image_id: str):
     images_list = db.read()

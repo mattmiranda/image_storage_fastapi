@@ -25,7 +25,6 @@ def remove_image(image_id: str):
 def list_to_dict(data: list):
     d = {}
     for item in data:
-        print(item)
         d[item['_id']] = item
     return d
 
