@@ -21,3 +21,11 @@ print("Deleting an item")
 print(requests.delete("http://127.0.0.1:8000/image/0").json())
 print(requests.get("http://127.0.0.1:8000/").json())
 print()
+
+
+import db_utils as db
+
+a = db.read()
+print(a)
+
+db.write(a, "data.json")

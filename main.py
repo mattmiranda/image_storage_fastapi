@@ -2,24 +2,21 @@ from datetime import datetime
 import uuid
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import db_utils as db
 
 app = FastAPI()
 
+# I understand that pydantic is very useful to create the data models. 
+# I will try using it for data validation. 
 class Image(BaseModel):
     _id: str
     createdDate: int
     filename: str
     contentType: str
 
-images = {
-    "0": Image(_id="0", createdDate=123098123, filename="cat1.jpeg", contentType="image/jpeg"),
-    "1": Image(_id="1", createdDate=123098124, filename="cat2.jpeg", contentType="image/jpeg"),
-    "2": Image(_id="2", createdDate=123098125, filename="cat3.jpeg", contentType="image/jpeg"),
-    "3": Image(_id="3", createdDate=123098126, filename="cat4.jpeg", contentType="image/jpeg")
-}
-
 @app.get("/")
 def index():
+    images = db.read()
     return {"images": images}
 
 
