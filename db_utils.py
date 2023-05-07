@@ -1,6 +1,7 @@
 # Utility functions to read and write data to JSON database file
 
 import json
+from datetime import datetime
 from typing import Optional
 
 def read(filename: Optional[str] = 'database.json') -> list:
@@ -22,6 +23,16 @@ def remove_image(image_id: str):
     write(dict_to_list(images))
     return image
 
+def update_entry(entry: dict):
+    images = list_to_dict(read())
+    images[entry['_id']] = {
+        "_id": entry['_id'],
+        "createdDate": int(datetime.now().timestamp()),
+        "filename": entry['filename'],
+        "contentType": entry['contentType']
+    }
+    write(dict_to_list(images))
+    
 def list_to_dict(data: list):
     d = {}
     for item in data:

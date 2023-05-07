@@ -6,11 +6,25 @@ from typing import Union, Optional, Annotated
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 import db_utils as db
 
 IMG_BASE_PATH = './image/'
 
 app = FastAPI()
+
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # I understand that pydantic is very useful to create and manage the data models, 
 # however I decided to use only basic python objects and data types as the purpose 
@@ -58,10 +72,6 @@ def get_image_by_id(image_id: str) -> FileResponse:
 async def add_image(file: Annotated[UploadFile, File()]) -> FileResponse:
     if not file.filename or file.size < 1:
         raise HTTPException(status_code=404, detail=f"Invalid or missing file")
-    images_list = db.read()
-    for img in images_list:
-        if file.filename == img["filename"]:
-            raise HTTPException(status_code=400, detail=f"Image with same name already exists")
 
     # Save image to 'image' directory using buffer
     out_file_path = IMG_BASE_PATH + file.filename
@@ -71,16 +81,23 @@ async def add_image(file: Annotated[UploadFile, File()]) -> FileResponse:
 
     # If image is larger than 1MB, downsize it and overwrite the original image
     img = Image.open(out_file_path)
-    if file.size > 1000000:
-        img.thumbnail((1000,1000))
+    if img.width > 500 or img.height > 500:
+        img.thumbnail((500,500))
     img.save(IMG_BASE_PATH + file.filename)
 
-    # Store image entry to DB
+    images_list = db.read()
+    for img in images_list:
+        if file.filename == img["filename"]:
+            # Image with same name already exists, update existing entry
+            db.update_entry(img)
+            return FileResponse(IMG_BASE_PATH + file.filename)
+        
+    # Store image entry in DB
     new_image = {
         "_id": uuid.uuid1().hex,
+        "createdDate": int(datetime.now().timestamp()),
         "filename": file.filename,
         "contentType": file.content_type,
-        "createdDate": int(datetime.now().timestamp())
     }
     result = db.add_image(new_image)
     return FileResponse(IMG_BASE_PATH + file.filename)
