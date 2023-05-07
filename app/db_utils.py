@@ -4,13 +4,15 @@ import json
 from datetime import datetime
 from typing import Optional
 
+database_file = "./app/database.json"
 
-def read(filename: Optional[str] = "database.json") -> list:
+
+def read(filename: Optional[str] = database_file) -> list:
     with open(filename, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def write(data: list, filename: Optional[str] = "database.json"):
+def write(data: list, filename: Optional[str] = database_file):
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 

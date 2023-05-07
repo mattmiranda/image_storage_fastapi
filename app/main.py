@@ -7,9 +7,9 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-import db_utils as db
+from . import db_utils as db
 
-IMG_BASE_PATH = "./image/"
+IMG_BASE_PATH = "./app/image/"
 
 app = FastAPI()
 
