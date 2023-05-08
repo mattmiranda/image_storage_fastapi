@@ -3,3 +3,5 @@ uvicorn
 python-multipart
 aiofiles
 pillow
+pytest
+requests
