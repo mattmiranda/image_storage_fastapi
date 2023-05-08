@@ -2,7 +2,7 @@ import os
 import uuid
 import aiofiles
 from PIL import Image
-from typing import Union, Optional, Annotated
+from typing import Optional, Annotated
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.responses import FileResponse
@@ -40,7 +40,6 @@ def query_all_images() -> dict[str, list]:
 
 # Query images by parameters included in the url. These are optional parameters.
 # Example: /image?filename=cat1.jpeg
-# TODO: Update python to 3.10+ in order to use simplified Optional/Union syntax, ie: str | None = None
 @app.get("/image")
 def query_image_by_parameter(
     filename: Optional[str] = None,
