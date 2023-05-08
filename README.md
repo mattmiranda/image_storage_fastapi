@@ -101,4 +101,5 @@ docker run -d --name mycontainer -p 8000:8000 image-compression-backend
 ```
 
 ## TODO:
+1. Unit test
 1. Update python to 3.10+ in order to use simplified Optional/Union syntax, ie: str | None = None
