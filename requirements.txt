@@ -1,4 +1,5 @@
-fastapi "uvicorn[standard]"
+fastapi
+uvicorn
 python-multipart
 aiofiles
 pillow
